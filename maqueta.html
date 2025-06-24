@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Ventas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .tower-map {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 20px;
+        }
+        .apartment-map {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+        .available {
+            background-color: #4ade80;
+        }
+        .reserved {
+            background-color: #fbbf24;
+        }
+        .sold {
+            background-color: #ef4444;
+        }
+        .phase-timeline {
+            position: relative;
+        }
+        .phase-timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            height: 100%;
+            width: 2px;
+            background-color: #e5e7eb;
+        }
+        .history-item::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            left: -20px;
+            width: 40px;
+            height: 2px;
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Contenedor principal -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Encabezado -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <i class="fas fa-building text-blue-600 text-3xl mr-3"></i>
+                <h1 class="text-2xl font-bold text-gray-800">Gestión de Ventas</h1>
+            </div>
+            <div id="user-info" class="flex items-center">
+                <span class="mr-2 text-gray-600">Usuario: Admin</span>
+                <i class="fas fa-user-circle text-gray-600 text-xl"></i>
+            </div>
+        </header>
+
+        <!-- Contenido dinámico -->
+        <main id="app-content" class="bg-white rounded-lg shadow-md p-6">
+            <!-- Página de Macroproyectos (página inicial) -->
+            <div id="macroprojects-page">
+                <h2 class="text-xl font-semibold mb-6 text-gray-700">Seleccione un Macroproyecto</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Macroproyecto 1 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-all cursor-pointer" onclick="loadProjects('residencial')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-100 p-3 rounded-full mr-4">
+                                <i class="fas fa-home text-blue-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold">Residencial Altos</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Conjunto residencial de alta gama con 5 torres y áreas comunes.</p>
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Norte de la ciudad</span>
+                            <span><i class="fas fa-cubes mr-1"></i> 5 torres</span>
+                        </div>
+                    </div>
+
+                    <!-- Macroproyecto 2 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-all cursor-pointer" onclick="loadProjects('comercial')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-green-100 p-3 rounded-full mr-4">
+                                <i class="fas fa-store text-green-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold">Centro Comercial Plaza</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Complejo comercial con locales, oficinas y parqueaderos.</p>
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Centro de la ciudad</span>
+                            <span><i class="fas fa-cubes mr-1"></i> 3 bloques</span>
+                        </div>
+                    </div>
+
+                    <!-- Macroproyecto 3 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-all cursor-pointer" onclick="loadProjects('mixto')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-purple-100 p-3 rounded-full mr-4">
+                                <i class="fas fa-city text-purple-600 text-xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold">Urbanización Mixta</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">Proyecto con zonas residenciales, comerciales y recreativas.</p>
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> Zona Este</span>
+                            <span><i class="fas fa-cubes mr-1"></i> 7 sectores</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Página de Proyectos (oculta inicialmente) -->
+            <div id="projects-page" class="hidden">
+                <div class="flex items-center mb-6">
+                    <button onclick="backToMacroprojects()" class="mr-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-700" id="macroproject-title"></h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="projects-list">
+                    <!-- Los proyectos se cargarán dinámicamente aquí -->
+                </div>
+            </div>
+
+            <!-- Página de Fases (oculta inicialmente) -->
+            <div id="phases-page" class="hidden">
+                <div class="flex items-center mb-6">
+                    <button onclick="backToProjects()" class="mr-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-700" id="project-title"></h2>
+                </div>
+                
+                <div class="phase-timeline">
+                    <!-- Fase 1 -->
+                    <div class="mb-8 relative pl-12">
+                        <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                            <span>1</span>
+                        </div>
+                        <div class="card-hover bg-white p-4 rounded-lg shadow border border-gray-200 transition-all cursor-pointer" onclick="loadTowers('preventa')">
+                            <h3 class="font-semibold text-lg mb-2">Preventa</h3>
+                            <p class="text-gray-600 mb-2">Etapa inicial con descuentos especiales para compradores anticipados.</p>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span><i class="fas fa-calendar-alt mr-1"></i> Ene 2023 - Jun 2023</span>
+                                <span><i class="fas fa-percentage mr-1"></i> 30% vendido</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fase 2 -->
+                    <div class="mb-8 relative pl-12">
+                        <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white">
+                            <span>2</span>
+                        </div>
+                        <div class="card-hover bg-white p-4 rounded-lg shadow border border-gray-200 transition-all cursor-pointer" onclick="loadTowers('construccion')">
+                            <h3 class="font-semibold text-lg mb-2">En Construcción</h3>
+                            <p class="text-gray-600 mb-2">Etapa de desarrollo activo del proyecto con entregas parciales.</p>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span><i class="fas fa-calendar-alt mr-1"></i> Jul 2023 - Dic 2024</span>
+                                <span><i class="fas fa-percentage mr-1"></i> 15% vendido</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fase 3 -->
+                    <div class="relative pl-12">
+                        <div class="absolute left-0 top-0 w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600">
+                            <span>3</span>
+                        </div>
+                        <div class="card-hover bg-white p-4 rounded-lg shadow border border-gray-200 transition-all cursor-pointer" onclick="loadTowers('entrega')">
+                            <h3 class="font-semibold text-lg mb-2">Entrega Final</h3>
+                            <p class="text-gray-600 mb-2">Etapa de terminación y entrega de unidades completas.</p>
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span><i class="fas fa-calendar-alt mr-1"></i> Ene 2025 - Jun 2025</span>
+                                <span><i class="fas fa-percentage mr-1"></i> 0% vendido</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Página de Torres (oculta inicialmente) -->
+            <div id="towers-page" class="hidden">
+                <div class="flex items-center mb-6">
+                    <button onclick="backToPhases()" class="mr-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-700" id="phase-title"></h2>
+                </div>
+                
+                <div class="tower-map mb-8">
+                    <!-- Torre 1 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-4 border border-gray-200 transition-all cursor-pointer text-center" onclick="loadApartments('torre-1')">
+                        <div class="bg-blue-100 p-4 rounded-lg mb-3">
+                            <i class="fas fa-building text-blue-600 text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold">Torre Norte</h3>
+                        <p class="text-sm text-gray-500">20 pisos</p>
+                        <div class="mt-2 text-sm">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Disponible: 15</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Torre 2 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-4 border border-gray-200 transition-all cursor-pointer text-center" onclick="loadApartments('torre-2')">
+                        <div class="bg-green-100 p-4 rounded-lg mb-3">
+                            <i class="fas fa-building text-green-600 text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold">Torre Este</h3>
+                        <p class="text-sm text-gray-500">18 pisos</p>
+                        <div class="mt-2 text-sm">
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded">Disponible: 12</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Torre 3 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-4 border border-gray-200 transition-all cursor-pointer text-center" onclick="loadApartments('torre-3')">
+                        <div class="bg-purple-100 p-4 rounded-lg mb-3">
+                            <i class="fas fa-building text-purple-600 text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold">Torre Oeste</h3>
+                        <p class="text-sm text-gray-500">22 pisos</p>
+                        <div class="mt-2 text-sm">
+                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">Disponible: 8</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Torre 4 -->
+                    <div class="card-hover bg-white rounded-lg shadow-md p-4 border border-gray-200 transition-all cursor-pointer text-center" onclick="loadApartments('torre-4')">
+                        <div class="bg-yellow-100 p-4 rounded-lg mb-3">
+                            <i class="fas fa-building text-yellow-600 text-3xl"></i>
+                        </div>
+                        <h3 class="font-semibold">Torre Sur</h3>
+                        <p class="text-sm text-gray-500">16 pisos</p>
+                        <div class="mt-2 text-sm">
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Disponible: 5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <h3 class="font-semibold mb-2">Distribución de Torres</h3>
+                    <img src="https://via.placeholder.com/800x400?text=Mapa+de+Distribución+de+Torres" alt="Mapa de Torres" class="w-full rounded-lg">
+                </div>
+            </div>
+
+            <!-- Página de Apartamentos (oculta inicialmente) -->
+            <div id="apartments-page" class="hidden">
+                <div class="flex items-center mb-6">
+                    <button onclick="backToTowers()" class="mr-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-700" id="tower-title"></h2>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold">Seleccione un apartamento</h3>
+                        <div class="flex space-x-2">
+                            <span class="flex items-center text-sm"><span class="w-3 h-3 bg-green-500 rounded-full mr-1"></span> Disponible</span>
+                            <span class="flex items-center text-sm"><span class="w-3 h-3 bg-yellow-500 rounded-full mr-1"></span> Reservado</span>
+                            <span class="flex items-center text-sm"><span class="w-3 h-3 bg-red-500 rounded-full mr-1"></span> Vendido</span>
+                        </div>
+                    </div>
+                    
+                    <div class="apartment-map mb-8">
+                        <!-- Apartamentos se generarán dinámicamente -->
+                    </div>
+                </div>
+                
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <h3 class="font-semibold mb-2">Distribución por Pisos</h3>
+                    <div class="flex overflow-x-auto pb-2">
+                        <div class="flex-none mr-4">
+                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg">Todos</button>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="bg-white px-4 py-2 rounded-lg border border-gray-300">Piso 1</button>
+                            <button class="bg-white px-4 py-2 rounded-lg border border-gray-300">Piso 2</button>
+                            <button class="bg-white px-4 py-2 rounded-lg border border-gray-300">Piso 3</button>
+                            <button class="bg-white px-4 py-2 rounded-lg border border-gray-300">Piso 4</button>
+                            <button class="bg-white px-4 py-2 rounded-lg border border-gray-300">Piso 5</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Página de Detalles del Apartamento (oculta inicialmente) -->
+            <div id="apartment-details-page" class="hidden">
+                <div class="flex items-center mb-6">
+                    <button onclick="backToApartments()" class="mr-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-700" id="apartment-title"></h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="md:col-span-2">
+                        <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                            <img src="https://via.placeholder.com/600x400?text=Plano+del+Apartamento" alt="Plano del Apartamento" class="w-full rounded-lg">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                                <h3 class="font-semibold mb-2">Características</h3>
+                                <ul class="text-sm text-gray-600">
+                                    <li class="mb-1"><i class="fas fa-bed mr-2 text-blue-500"></i> 3 Habitaciones</li>
+                                    <li class="mb-1"><i class="fas fa-bath mr-2 text-blue-500"></i> 2 Baños</li>
+                                    <li class="mb-1"><i class="fas fa-ruler-combined mr-2 text-blue-500"></i> 85 m²</li>
+                                    <li><i class="fas fa-car mr-2 text-blue-500"></i> 1 Parqueadero</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+                                <h3 class="font-semibold mb-2">Amenidades</h3>
+                                <ul class="text-sm text-gray-600">
+                                    <li class="mb-1"><i class="fas fa-swimming-pool mr-2 text-blue-500"></i> Piscina</li>
+                                    <li class="mb-1"><i class="fas fa-dumbbell mr-2 text-blue-500"></i> Gimnasio</li>
+                                    <li class="mb-1"><i class="fas fa-tree mr-2 text-blue-500"></i> Zonas verdes</li>
+                                    <li><i class="fas fa-shield-alt mr-2 text-blue-500"></i> Seguridad 24/7</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-4">
+                            <h3 class="font-semibold mb-4">Estado Actual</h3>
+                            
+                            <div class="flex items-center mb-3">
+                                <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                <span class="font-medium">Disponible</span>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm text-gray-600 mb-1">Valor</label>
+                                <div class="text-2xl font-bold text-blue-600">$250,000,000</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm text-gray-600 mb-1">Piso</label>
+                                <div class="font-medium">8</div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <label class="block text-sm text-gray-600 mb-1">Torre</label>
+                                <div class="font-medium">Torre Norte</div>
+                            </div>
+                            
+                            <button onclick="showApartmentHistory()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all flex items-center justify-center">
+                                <i class="fas fa-info-circle mr-2"></i> Más Información
+                            </button>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <h3 class="font-semibold text-yellow-800 mb-2">Acciones Rápidas</h3>
+                            <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg mb-2 transition-all">
+                                <i class="fas fa-handshake mr-2"></i> Reservar
+                            </button>
+                            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all">
+                                <i class="fas fa-file-contract mr-2"></i> Generar Contrato
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Página de Historial del Apartamento (oculta inicialmente) -->
+            <div id="apartment-history-page" class="hidden">
+                <div class="flex items-center mb-6">
+                    <button onclick="backToApartmentDetails()" class="mr-4 text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="text-xl font-semibold text-gray-700">Historial del Apartamento <span id="history-apartment-title"></span></h2>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+                    <div class="relative">
+                        <!-- Evento 1 -->
+                        <div class="history-item relative pb-8 pl-8 border-l-2 border-gray-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-green-500 -ml-3"></div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-semibold">Disponible para venta</span>
+                                    <span class="text-sm text-gray-500">15 Mar 2023</span>
+                                </div>
+                                <p class="text-gray-600 text-sm">El apartamento fue liberado para venta en la fase de preventa.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Evento 2 -->
+                        <div class="history-item relative pb-8 pl-8 border-l-2 border-gray-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-yellow-500 -ml-3"></div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-semibold">Reservado por cliente</span>
+                                    <span class="text-sm text-gray-500">20 Abr 2023</span>
+                                </div>
+                                <p class="text-gray-600 text-sm">Cliente: Juan Pérez<br>
+                                Documento: 123456789<br>
+                                Reserva válida hasta: 20 May 2023</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Evento 3 -->
+                        <div class="history-item relative pb-8 pl-8 border-l-2 border-gray-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-red-500 -ml-3"></div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-semibold">Reserva cancelada</span>
+                                    <span class="text-sm text-gray-500">18 May 2023</span>
+                                </div>
+                                <p class="text-gray-600 text-sm">Motivo: El cliente encontró otra opción más económica.<br>
+                                Ejecutivo: María González</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Evento 4 -->
+                        <div class="history-item relative pl-8 border-l-2 border-gray-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-green-500 -ml-3"></div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-semibold">Disponible nuevamente</span>
+                                    <span class="text-sm text-gray-500">19 May 2023</span>
+                                </div>
+                                <p class="text-gray-600 text-sm">El apartamento fue liberado nuevamente para venta después de la cancelación de reserva.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 bg-white rounded-lg shadow border border-gray-200 p-6">
+                    <h3 class="font-semibold mb-4">Documentos Relacionados</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                            <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
+                            <div>
+                                <div class="font-medium">Contrato de Reserva</div>
+                                <div class="text-sm text-gray-500">20 Abr 2023</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                            <i class="fas fa-file-alt text-blue-500 text-2xl mr-3"></i>
+                            <div>
+                                <div class="font-medium">Cancelación de Reserva</div>
+                                <div class="text-sm text-gray-500">18 May 2023</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Datos de ejemplo para proyectos
+        const projectsData = {
+            residencial: [
+                { name: "Residencial Altos Fase 1", description: "Primera fase con 3 torres y zonas comunes", towers: 3 },
+                { name: "Residencial Altos Fase 2", description: "Segunda fase con 2 torres y piscina", towers: 2 }
+            ],
+            comercial: [
+                { name: "Centro Comercial Plaza Norte", description: "Bloque principal con locales comerciales", towers: 1 },
+                { name: "Centro Comercial Plaza Oficinas", description: "Torre de oficinas corporativas", towers: 1 },
+                { name: "Centro Comercial Plaza Parqueaderos", description: "Área de parqueaderos subterráneos", towers: 1 }
+            ],
+            mixto: [
+                { name: "Urbanización Mixta Residencial", description: "Zona de apartamentos y casas", towers: 4 },
+                { name: "Urbanización Mixta Comercial", description: "Área de locales y pequeños negocios", towers: 2 },
+                { name: "Urbanización Mixta Recreativa", description: "Zonas verdes y áreas deportivas", towers: 1 }
+            ]
+        };
+
+        // Datos de ejemplo para apartamentos
+        const apartmentsData = [
+            { id: "A801", status: "available", floor: 8, price: "250,000,000", rooms: 3, baths: 2, area: "85 m²" },
+            { id: "A802", status: "reserved", floor: 8, price: "245,000,000", rooms: 3, baths: 2, area: "82 m²" },
+            { id: "A803", status: "available", floor: 8, price: "255,000,000", rooms: 3, baths: 2, area: "88 m²" },
+            { id: "A701", status: "sold", floor: 7, price: "240,000,000", rooms: 3, baths: 2, area: "85 m²" },
+            { id: "A702", status: "available", floor: 7, price: "235,000,000", rooms: 2, baths: 2, area: "75 m²" },
+            { id: "A703", status: "available", floor: 7, price: "230,000,000", rooms: 2, baths: 1, area: "70 m²" },
+            { id: "A901", status: "available", floor: 9, price: "260,000,000", rooms: 3, baths: 2, area: "90 m²" },
+            { id: "A902", status: "reserved", floor: 9, price: "265,000,000", rooms: 3, baths: 2, area: "92 m²" }
+        ];
+
+        // Variables para rastrear la navegación
+        let currentMacroproject = "";
+        let currentProject = "";
+        let currentPhase = "";
+        let currentTower = "";
+        let currentApartment = "";
+
+        // Función para cargar proyectos basados en el macroproyecto seleccionado
+        function loadProjects(macroproject) {
+            currentMacroproject = macroproject;
+            
+            // Ocultar página actual y mostrar página de proyectos
+            document.getElementById('macroprojects-page').classList.add('hidden');
+            document.getElementById('projects-page').classList.remove('hidden');
+            
+            // Establecer título
+            let title = "";
+            switch(macroproject) {
+                case "residencial": title = "Residencial Altos"; break;
+                case "comercial": title = "Centro Comercial Plaza"; break;
+                case "mixto": title = "Urbanización Mixta"; break;
+            }
+            document.getElementById('macroproject-title').textContent = title;
+            
+            // Cargar proyectos dinámicamente
+            const projectsList = document.getElementById('projects-list');
+            projectsList.innerHTML = "";
+            
+            projectsData[macroproject].forEach(project => {
+                const projectCard = document.createElement('div');
+                projectCard.className = 'card-hover bg-white rounded-lg shadow-md p-6 border border-gray-200 transition-all cursor-pointer';
+                projectCard.innerHTML = `
+                    <div class="flex items-center mb-4">
+                        <div class="bg-blue-100 p-3 rounded-full mr-4">
+                            <i class="fas fa-project-diagram text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold">${project.name}</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">${project.description}</p>
+                    <div class="flex justify-between text-sm text-gray-500">
+                        <span><i class="fas fa-cubes mr-1"></i> ${project.towers} torres</span>
+                        <span><i class="fas fa-clock mr-1"></i> En progreso</span>
+                    </div>
+                `;
+                projectCard.onclick = function() {
+                    currentProject = project.name;
+                    loadPhases();
+                };
+                projectsList.appendChild(projectCard);
+            });
+        }
+
+        // Función para cargar fases
+        function loadPhases() {
+            // Ocultar página actual y mostrar página de fases
+            document.getElementById('projects-page').classList.add('hidden');
+            document.getElementById('phases-page').classList.remove('hidden');
+            
+            // Establecer título
+            document.getElementById('project-title').textContent = currentProject;
+        }
+
+        // Función para cargar torres
+        function loadTowers(phase) {
+            currentPhase = phase;
+            
+            // Ocultar página actual y mostrar página de torres
+            document.getElementById('phases-page').classList.add('hidden');
+            document.getElementById('towers-page').classList.remove('hidden');
+            
+            // Establecer título
+            let phaseTitle = "";
+            switch(phase) {
+                case "preventa": phaseTitle = "Preventa"; break;
+                case "construccion": phaseTitle = "En Construcción"; break;
+                case "entrega": phaseTitle = "Entrega Final"; break;
+            }
+            document.getElementById('phase-title').textContent = `${currentProject} - ${phaseTitle}`;
+        }
+
+        // Función para cargar apartamentos
+        function loadApartments(tower) {
+            currentTower = tower;
+            
+            // Ocultar página actual y mostrar página de apartamentos
+            document.getElementById('towers-page').classList.add('hidden');
+            document.getElementById('apartments-page').classList.remove('hidden');
+            
+            // Establecer título
+            let towerTitle = "";
+            switch(tower) {
+                case "torre-1": towerTitle = "Torre Norte"; break;
+                case "torre-2": towerTitle = "Torre Este"; break;
+                case "torre-3": towerTitle = "Torre Oeste"; break;
+                case "torre-4": towerTitle = "Torre Sur"; break;
+            }
+            document.getElementById('tower-title').textContent = `${currentProject} - ${towerTitle}`;
+            
+            // Generar apartamentos dinámicamente
+            const apartmentMap = document.querySelector('.apartment-map');
+            apartmentMap.innerHTML = "";
+            
+            apartmentsData.forEach(apartment => {
+                const apartmentDiv = document.createElement('div');
+                apartmentDiv.className = `card-hover text-center p-2 rounded-lg cursor-pointer transition-all ${apartment.status}`;
+                apartmentDiv.innerHTML = `
+                    <div class="font-medium">${apartment.id}</div>
+                    <div class="text-xs">Piso ${apartment.floor}</div>
+                `;
+                apartmentDiv.onclick = function() {
+                    currentApartment = apartment.id;
+                    showApartmentDetails(apartment);
+                };
+                apartmentMap.appendChild(apartmentDiv);
+            });
+        }
+
+        // Función para mostrar detalles del apartamento
+        function showApartmentDetails(apartment) {
+            // Ocultar página actual y mostrar página de detalles
+            document.getElementById('apartments-page').classList.add('hidden');
+            document.getElementById('apartment-details-page').classList.remove('hidden');
+            
+            // Establecer título
+            document.getElementById('apartment-title').textContent = `Apartamento ${apartment.id}`;
+            
+            // Actualizar detalles
+            const statusElement = document.querySelector('#apartment-details-page .bg-white .flex.items-center span.font-medium');
+            statusElement.textContent = apartment.status === 'available' ? 'Disponible' : 
+                                        apartment.status === 'reserved' ? 'Reservado' : 'Vendido';
+            
+            const statusDot = document.querySelector('#apartment-details-page .bg-white .flex.items-center span.w-3');
+            statusDot.className = `w-3 h-3 rounded-full mr-2 ${apartment.status === 'available' ? 'bg-green-500' : 
+                                  apartment.status === 'reserved' ? 'bg-yellow-500' : 'bg-red-500'}`;
+            
+            document.querySelector('#apartment-details-page .bg-white .text-2xl').textContent = `$${apartment.price}`;
+            document.querySelector('#apartment-details-page .bg-white .font-medium:nth-of-type(3)').textContent = apartment.floor;
+            
+            // Actualizar características
+            const featuresList = document.querySelector('#apartment-details-page .bg-white ul:first-of-type');
+            featuresList.innerHTML = `
+                <li class="mb-1"><i class="fas fa-bed mr-2 text-blue-500"></i> ${apartment.rooms} Habitaciones</li>
+                <li class="mb-1"><i class="fas fa-bath mr-2 text-blue-500"></i> ${apartment.baths} Baños</li>
+                <li class="mb-1"><i class="fas fa-ruler-combined mr-2 text-blue-500"></i> ${apartment.area}</li>
+                <li><i class="fas fa-car mr-2 text-blue-500"></i> 1 Parqueadero</li>
+            `;
+        }
+
+        // Función para mostrar historial del apartamento
+        function showApartmentHistory() {
+            // Ocultar página actual y mostrar página de historial
+            document.getElementById('apartment-details-page').classList.add('hidden');
+            document.getElementById('apartment-history-page').classList.remove('hidden');
+            
+            // Establecer título
+            document.getElementById('history-apartment-title').textContent = currentApartment;
+        }
+
+        // Funciones para navegar hacia atrás
+        function backToMacroprojects() {
+            document.getElementById('projects-page').classList.add('hidden');
+            document.getElementById('macroprojects-page').classList.remove('hidden');
+        }
+
+        function backToProjects() {
+            document.getElementById('phases-page').classList.add('hidden');
+            document.getElementById('projects-page').classList.remove('hidden');
+        }
+
+        function backToPhases() {
+            document.getElementById('towers-page').classList.add('hidden');
+            document.getElementById('phases-page').classList.remove('hidden');
+        }
+
+        function backToTowers() {
+            document.getElementById('apartments-page').classList.add('hidden');
+            document.getElementById('towers-page').classList.remove('hidden');
+        }
+
+        function backToApartmentDetails() {
+            document.getElementById('apartment-history-page').classList.add('hidden');
+            document.getElementById('apartment-details-page').classList.remove('hidden');
+        }
+
+        function backToApartments() {
+            document.getElementById('apartment-details-page').classList.add('hidden');
+            document.getElementById('apartments-page').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
